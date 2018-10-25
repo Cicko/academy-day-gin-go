@@ -143,9 +143,9 @@ func ReformatUser(u string) user {
 }
 
 
-func GetUserByToken(token string) user {
+func GetUserByToken(token string) (user, error) {
 	var wantedUser user
-	UserDb.View(func(tx *buntdb.Tx) error {
+	err := UserDb.View(func(tx *buntdb.Tx) error {
 		numUsers, error := tx.Len()
 		if error != nil {
 			fmt.Errorf(err.Error())
@@ -169,5 +169,5 @@ func GetUserByToken(token string) user {
 		}
 		return nil
 	})
-	return wantedUser
+	return wantedUser, err
 }

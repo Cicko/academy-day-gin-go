@@ -2,7 +2,7 @@ package routes
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/buntdb"
 	"strconv"
@@ -24,13 +24,16 @@ func AddPost(c *gin.Context) {
 	var author user
 
 	err := UserDb.View(func(tx *buntdb.Tx) error {
-		author = GetUserByToken(token)
+		author, err = GetUserByToken(token)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+		}
 		return nil
 	})
 
 
 	if err != nil {
-		fmt.Errorf(err.Error())
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	var idString (string)
@@ -71,6 +74,12 @@ func GetPost(c *gin.Context) {
 func EditPost(c *gin.Context) {
 	id := c.Params.ByName("id")
 	message := c.PostForm("message")
+	token := c.GetHeader("token")
+	err := CheckPostAuthor(token, id)
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
 	PostsDb.Update(func(tx *buntdb.Tx) error {
 		p, err := tx.Get(id)
 		if err != nil {
@@ -99,6 +108,12 @@ func EditPost(c *gin.Context) {
 
 func DeletePost(c *gin.Context) {
 	id := c.Params.ByName("id")
+	token := c.GetHeader("token")
+	err := CheckPostAuthor(token, id)
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
 	PostsDb.Update(func(tx *buntdb.Tx) error {
 		tx.Set(id, "cucu", &buntdb.SetOptions{Expires:true, TTL:time.Second})
 		return nil
@@ -136,4 +151,20 @@ func ReformatPost(p string) post {
 	var raw post
 	json.Unmarshal(in, &raw)
 	return raw
+}
+
+func CheckPostAuthor(token string, postId string) error {
+	var post string
+	err = PostsDb.View(func(tx *buntdb.Tx) error {
+		post, err = tx.Get(postId)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	reformattedPost := ReformatPost(post)
+	if reformattedPost.Author.Token != token {
+		return errors.New("Not authorized user")
+	}
+	return err
 }
