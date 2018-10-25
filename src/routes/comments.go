@@ -13,37 +13,65 @@ var CommentsDb, _ = buntdb.Open("comments.db")
 type comment struct {
 	Message string `json:"message"`
 	PostId string `json:"postId"`
-	Author string `json:"author"`
 	Id string `json:"id"`
 }
 
 func AddComment(c *gin.Context) {
 	message := c.PostForm("message")
 	token := c.GetHeader("token")
-	var author user
+	postId := c.Params.ByName("postId")
 
+	// Check if user exists
 	err := UserDb.View(func(tx *buntdb.Tx) error {
-		author, err = GetUserByToken(token)
+		_, err = GetUserByToken(token)
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
+			return err
 		}
 		return nil
 	})
-
-
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	var idString (string)
+
+	// Check if post exists and update it with the new comment
 	err = PostsDb.Update(func(tx *buntdb.Tx) error {
-		numPosts, err := tx.Len()
+		post, err := tx.Get(postId)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return err
+		}
+		reformattedPost := ReformatPost(post)
+		reformattedPost.Comments = append(reformattedPost.Comments, message)
+
+		mapD := map[string]interface{}{
+			"comments": reformattedPost.Comments,
+			"id": reformattedPost.Id,
+			"author": reformattedPost.Author,
+		}
+		mapB, _ := json.Marshal(mapD)
+		_, _, errr := tx.Set(postId, string(mapB), nil)
+		if errr != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	var idString (string)
+	err = CommentsDb.Update(func(tx *buntdb.Tx) error {
+		numComments, err := tx.Len()
 		if err != nil{
 			return err;
 		}
-		id := numPosts + 1
+		id := numComments + 1
 		idString = strconv.Itoa(id)
-		post := &post{Message: message, Author: author, Id: idString}
+		post := &comment{Message: message, Id: idString, PostId: postId}
 		mapB, _ := json.Marshal(post)
 		_, _, errr := tx.Set(idString, string(mapB), nil)
 		return errr
@@ -51,7 +79,7 @@ func AddComment(c *gin.Context) {
 	if err != nil{
 		c.JSON(500, gin.H{"error": err.Error()})
 	} else {
-		c.JSON(200, gin.H{"id": idString, "message": message, "author": author})
+		c.JSON(200, gin.H{"id": idString, "message": message})
 	}
 }
 

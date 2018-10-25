@@ -13,7 +13,7 @@ var PostsDb, err = buntdb.Open("posts.db")
 
 type post struct {
 	Message string `json:"message"`
-	Comments []comment `json:"comments"`
+	Comments []string `json:"comments"`
 	Author user `json:"author"`
 	Id string `json:"id"`
 }

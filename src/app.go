@@ -23,5 +23,9 @@ func main() {
 		Posts.DELETE("/:id", routes.DeletePost)
 		Posts.GET("/", routes.ShowPosts)
 	}
+	Comments := router.Group("api/posts")
+	{
+		Comments.POST("/:postId/comments", routes.AddComment)
+	}
 	router.Run()
 }
