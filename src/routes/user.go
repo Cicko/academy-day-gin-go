@@ -104,7 +104,7 @@ func EditUser(c *gin.Context) {
 			return err
 		}
 		reformattedUser := ReformatUser(u)
-		mapD := map[string]string{
+		mapD := map[string]interface{}{
 			"token": reformattedUser.Token,
 			"id": reformattedUser.Id,
 		}
@@ -120,6 +120,7 @@ func EditUser(c *gin.Context) {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return err
 		}
+		c.JSON(200, gin.H(mapD))
 		return nil
 	})
 

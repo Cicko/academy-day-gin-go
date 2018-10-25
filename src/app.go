@@ -19,9 +19,9 @@ func main() {
 	{
 		Posts.POST("/", routes.AddPost)
 		Posts.GET("/:id", routes.GetPost)
+		Posts.PUT("/:id", routes.EditPost)
 		/*
 		Posts.GET("/", routes.ShowPosts)
-		Posts.PUT("/:id", routes.EditPost)
 		Posts.DELETE("/:id", routes.DeletePost)
 		*/
 	}

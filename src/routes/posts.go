@@ -67,6 +67,35 @@ func GetPost(c *gin.Context) {
 	})
 }
 
+func EditPost(c *gin.Context) {
+	id := c.Params.ByName("id")
+	message := c.PostForm("message")
+	PostsDb.Update(func(tx *buntdb.Tx) error {
+		p, err := tx.Get(id)
+		if err != nil {
+			c.JSON(404, gin.H{"error": "Post doesn't exist"})
+			return err
+		}
+		reformattedPost := ReformatPost(p)
+		mapD := map[string]interface{}{
+			"comments": reformattedPost.Comments,
+			"id": reformattedPost.Id,
+			"author": reformattedPost.Author,
+		}
+		if message != "" {
+			mapD["message"] = message
+		}
+		mapB, _ := json.Marshal(mapD)
+		_, _, errr := tx.Set(id, string(mapB), nil)
+		if errr != nil{
+			c.JSON(500, gin.H{"error": err.Error()})
+			return err
+		}
+		c.JSON(200, gin.H(mapD))
+		return nil
+	})
+}
+
 // Utils
 func ReformatPost(p string) post {
 	in := []byte(p)
