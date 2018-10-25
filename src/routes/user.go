@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/buntdb"
 	"strconv"
+	"time"
 )
 
 var db, err = buntdb.Open("users.db")
@@ -70,11 +71,10 @@ func GetAllUsers(c *gin.Context) {
 			c.JSON(500, gin.H{"error": error.Error()})
 			return error
 		}
-		for i := 0; i < numUsers; i++ {
+		for i := 1; i < numUsers; i++ {
 			u, err := tx.Get(strconv.Itoa(i))
 			if err != nil{
 				c.JSON(500, gin.H{"error": err.Error()})
-				return err
 			}
 			users = append(users, reformatUser(u))
 		}
@@ -86,6 +86,46 @@ func GetAllUsers(c *gin.Context) {
 		return err
 	})
 	return
+}
+
+func EditUser(c *gin.Context) {
+	id := c.Params.ByName("id")
+	name := c.PostForm("name")
+	email := c.PostForm("email")
+	db.Update(func(tx *buntdb.Tx) error {
+		u, err := tx.Get(id)
+		if err != nil {
+			c.JSON(404, gin.H{"error": "User doesn't exist"})
+			return err
+		}
+		reformattedUser := reformatUser(u)
+		mapD := map[string]string{
+			"token": reformattedUser.Token,
+			"id": reformattedUser.Id,
+		}
+		if name != "" {
+			mapD["name"] = name
+		}
+		if email != "" {
+			mapD["email"] = email
+		}
+		mapB, _ := json.Marshal(mapD)
+		_, _, errr := tx.Set(id, string(mapB), nil)
+		if errr != nil{
+			c.JSON(500, gin.H{"error": err.Error()})
+			return err
+		}
+		return nil
+	})
+
+}
+
+func DeleteUser(c *gin.Context) {
+	id := c.Params.ByName("id")
+	db.Update(func(tx *buntdb.Tx) error {
+		tx.Set(id, "cucu", &buntdb.SetOptions{Expires:true, TTL:time.Second})
+		return nil
+	})
 }
 
 func reformatUser(u string) user {
