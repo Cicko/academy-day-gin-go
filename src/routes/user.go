@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var db, err = buntdb.Open("users.db")
+var UserDb, _ = buntdb.Open("users.db")
 
 type user struct {
 	Name string `json:"name"`
@@ -29,13 +29,18 @@ func AddUser(c *gin.Context) {
 		return
 	}
 	var idString (string)
-	err = db.Update(func(tx *buntdb.Tx) error {
+	err = UserDb.Update(func(tx *buntdb.Tx) error {
+		err := tx.CreateIndex("token", "token")
+		if err != nil{
+			fmt.Errorf(err.Error())
+		}
 		numUsers, err := tx.Len()
 		if err != nil{
 			return err;
 		}
 		id := numUsers + 1
 		idString = strconv.Itoa(id)
+		fmt.Println(idString)
 		mapD := map[string]string{"name": name, "email": email, "token": token, "id": idString}
 		mapB, _ := json.Marshal(mapD)
 		_, _, errr := tx.Set(idString, string(mapB), nil)
@@ -51,32 +56,32 @@ func AddUser(c *gin.Context) {
 func GetUser(c *gin.Context) {
 	id := c.Params.ByName("id")
 
-	db.View(func(tx *buntdb.Tx) error {
+	UserDb.View(func(tx *buntdb.Tx) error {
 		user, err := tx.Get(id)
 		if err != nil{
 			c.JSON(404, gin.H{"error": "User doesn't exist"})
 			return err
 		}
-		c.JSON(200, gin.H{"user": reformatUser(user)})
+		c.JSON(200, gin.H{"user": ReformatUser(user)})
 		return err
 	})
 }
 
 
 func GetAllUsers(c *gin.Context) {
-	db.View(func(tx *buntdb.Tx) error {
+	UserDb.View(func(tx *buntdb.Tx) error {
 		numUsers, error := tx.Len()
 		var users []user
 		if error != nil {
 			c.JSON(500, gin.H{"error": error.Error()})
 			return error
 		}
-		for i := 1; i < numUsers; i++ {
+		for i := 1; i <= numUsers; i++ {
 			u, err := tx.Get(strconv.Itoa(i))
 			if err != nil{
 				c.JSON(500, gin.H{"error": err.Error()})
 			}
-			users = append(users, reformatUser(u))
+			users = append(users, ReformatUser(u))
 		}
 		if err != nil{
 			c.JSON(500, gin.H{"error": err.Error()})
@@ -92,13 +97,13 @@ func EditUser(c *gin.Context) {
 	id := c.Params.ByName("id")
 	name := c.PostForm("name")
 	email := c.PostForm("email")
-	db.Update(func(tx *buntdb.Tx) error {
+	UserDb.Update(func(tx *buntdb.Tx) error {
 		u, err := tx.Get(id)
 		if err != nil {
 			c.JSON(404, gin.H{"error": "User doesn't exist"})
 			return err
 		}
-		reformattedUser := reformatUser(u)
+		reformattedUser := ReformatUser(u)
 		mapD := map[string]string{
 			"token": reformattedUser.Token,
 			"id": reformattedUser.Id,
@@ -122,15 +127,46 @@ func EditUser(c *gin.Context) {
 
 func DeleteUser(c *gin.Context) {
 	id := c.Params.ByName("id")
-	db.Update(func(tx *buntdb.Tx) error {
+	UserDb.Update(func(tx *buntdb.Tx) error {
 		tx.Set(id, "cucu", &buntdb.SetOptions{Expires:true, TTL:time.Second})
 		return nil
 	})
 }
 
-func reformatUser(u string) user {
+// Utils
+func ReformatUser(u string) user {
 	in := []byte(u)
 	var raw user
 	json.Unmarshal(in, &raw)
 	return raw
+}
+
+
+func GetUserByToken(token string) user {
+	var wantedUser user
+	UserDb.View(func(tx *buntdb.Tx) error {
+		numUsers, error := tx.Len()
+		if error != nil {
+			fmt.Errorf(err.Error())
+			return error
+		}
+		for i := 1; i <= numUsers; i++ {
+			u, err := tx.Get(strconv.Itoa(i))
+			if err != nil{
+				fmt.Errorf(err.Error())
+				return error
+			}
+			reformattedUser := ReformatUser(u)
+			fmt.Println(reformattedUser)
+			if token == reformattedUser.Token {
+				wantedUser = reformattedUser
+			}
+		}
+		if err != nil{
+			fmt.Errorf(err.Error())
+			return err
+		}
+		return nil
+	})
+	return wantedUser
 }

@@ -15,5 +15,15 @@ func main() {
 		Users.PUT("/:id", routes.EditUser)
 		Users.DELETE("/:id", routes.DeleteUser)
 	}
+	Posts := router.Group("api/posts")
+	{
+		Posts.POST("/", routes.AddPost)
+		/*
+		Posts.GET("/:id", routes.GetPost)
+		Posts.GET("/", routes.ShowPosts)
+		Posts.PUT("/:id", routes.EditPost)
+		Posts.DELETE("/:id", routes.DeletePost)
+		*/
+	}
 	router.Run()
 }
