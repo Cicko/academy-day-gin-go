@@ -20,10 +20,8 @@ func main() {
 		Posts.POST("/", routes.AddPost)
 		Posts.GET("/:id", routes.GetPost)
 		Posts.PUT("/:id", routes.EditPost)
-		/*
-		Posts.GET("/", routes.ShowPosts)
 		Posts.DELETE("/:id", routes.DeletePost)
-		*/
+		Posts.GET("/", routes.ShowPosts)
 	}
 	router.Run()
 }

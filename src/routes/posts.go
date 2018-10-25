@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/buntdb"
 	"strconv"
+	"time"
 )
 
 var PostsDb, err = buntdb.Open("posts.db")
@@ -59,7 +60,7 @@ func GetPost(c *gin.Context) {
 	PostsDb.View(func(tx *buntdb.Tx) error {
 		post, err := tx.Get(id)
 		if err != nil{
-			c.JSON(404, gin.H{"error": "User doesn't exist"})
+			c.JSON(404, gin.H{"error": "Post doesn't exist"})
 			return err
 		}
 		c.JSON(200, gin.H{"post": ReformatPost(post)})
@@ -94,6 +95,39 @@ func EditPost(c *gin.Context) {
 		c.JSON(200, gin.H(mapD))
 		return nil
 	})
+}
+
+func DeletePost(c *gin.Context) {
+	id := c.Params.ByName("id")
+	PostsDb.Update(func(tx *buntdb.Tx) error {
+		tx.Set(id, "cucu", &buntdb.SetOptions{Expires:true, TTL:time.Second})
+		return nil
+	})
+}
+
+func ShowPosts(c *gin.Context) {
+	PostsDb.View(func(tx *buntdb.Tx) error {
+		numUsers, error := tx.Len()
+		var posts []post
+		if error != nil {
+			c.JSON(500, gin.H{"error": error.Error()})
+			return error
+		}
+		for i := 1; i <= numUsers; i++ {
+			p, err := tx.Get(strconv.Itoa(i))
+			if err != nil{
+				c.JSON(500, gin.H{"error": err.Error()})
+			}
+			posts = append(posts, ReformatPost(p))
+		}
+		if err != nil{
+			c.JSON(500, gin.H{"error": err.Error()})
+			return err
+		}
+		c.JSON(200, gin.H{"posts": posts})
+		return err
+	})
+	return
 }
 
 // Utils
