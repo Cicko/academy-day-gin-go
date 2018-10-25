@@ -18,8 +18,8 @@ func main() {
 	Posts := router.Group("api/posts")
 	{
 		Posts.POST("/", routes.AddPost)
-		/*
 		Posts.GET("/:id", routes.GetPost)
+		/*
 		Posts.GET("/", routes.ShowPosts)
 		Posts.PUT("/:id", routes.EditPost)
 		Posts.DELETE("/:id", routes.DeletePost)

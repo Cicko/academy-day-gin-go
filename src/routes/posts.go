@@ -52,3 +52,25 @@ func AddPost(c *gin.Context) {
 	}
 }
 
+
+func GetPost(c *gin.Context) {
+	id := c.Params.ByName("id")
+
+	PostsDb.View(func(tx *buntdb.Tx) error {
+		post, err := tx.Get(id)
+		if err != nil{
+			c.JSON(404, gin.H{"error": "User doesn't exist"})
+			return err
+		}
+		c.JSON(200, gin.H{"post": ReformatPost(post)})
+		return err
+	})
+}
+
+// Utils
+func ReformatPost(p string) post {
+	in := []byte(p)
+	var raw post
+	json.Unmarshal(in, &raw)
+	return raw
+}
