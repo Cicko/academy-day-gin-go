@@ -48,8 +48,17 @@ func AddUser(c *gin.Context) {
 }
 
 func GetUser(c *gin.Context) {
-	user := c.Params.ByName("id")
-	c.JSON(200, gin.H{"user": user, "message": "User get"})
+	id := c.Params.ByName("id")
+
+	db.View(func(tx *buntdb.Tx) error {
+		user, err := tx.Get(id)
+		if err != nil{
+			c.JSON(404, gin.H{"error": "User doesn't exist"})
+			return err
+		}
+		c.JSON(200, gin.H{"user": reformatUser(user)})
+		return err
+	})
 }
 
 
@@ -59,22 +68,29 @@ func GetAllUsers(c *gin.Context) {
 		var users []user
 		if error != nil {
 			c.JSON(500, gin.H{"error": error.Error()})
+			return error
 		}
 		for i := 0; i < numUsers; i++ {
 			u, err := tx.Get(strconv.Itoa(i))
 			if err != nil{
 				c.JSON(500, gin.H{"error": err.Error()})
+				return err
 			}
-			in := []byte(u)
-			var raw user
-			json.Unmarshal(in, &raw)
-			users = append(users, raw)
+			users = append(users, reformatUser(u))
 		}
 		if err != nil{
 			c.JSON(500, gin.H{"error": err.Error()})
+			return err
 		}
 		c.JSON(200, gin.H{"users": users})
 		return err
 	})
 	return
+}
+
+func reformatUser(u string) user {
+	in := []byte(u)
+	var raw user
+	json.Unmarshal(in, &raw)
+	return raw
 }
