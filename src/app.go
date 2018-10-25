@@ -11,6 +11,7 @@ func main() {
 	{
 		Users.POST("/", routes.AddUser)
 		Users.GET("/:id", routes.GetUser)
+		Users.GET("/", routes.GetAllUsers)
 		// Users.PUT("/:id", editUser)
 		// Users.DELETE("/:id", deleteUser)
 	}
