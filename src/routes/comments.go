@@ -86,14 +86,37 @@ func AddComment(c *gin.Context) {
 
 func GetComment(c *gin.Context) {
 	id := c.Params.ByName("id")
+	postId := c.Params.ByName("postId")
+	token := c.GetHeader("token")
 
-	PostsDb.View(func(tx *buntdb.Tx) error {
-		post, err := tx.Get(id)
-		if err != nil{
-			c.JSON(404, gin.H{"error": "Post doesn't exist"})
+	// Check if user exists
+	err := UserDb.View(func(tx *buntdb.Tx) error {
+		_, err = GetUserByToken(token)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
 			return err
 		}
-		c.JSON(200, gin.H{"post": ReformatPost(post)})
+		return nil
+	})
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = CheckPostAuthor(token, postId)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	CommentsDb.View(func(tx *buntdb.Tx) error {
+		comment, err := tx.Get(id)
+		if err != nil{
+			c.JSON(404, gin.H{"error": "Comment doesn't exist"})
+			return err
+		}
+		rc := ReformatComment(comment)
+		c.JSON(200, gin.H{"postId": rc.PostId, "message": rc.Message})
 		return err
 	})
 }

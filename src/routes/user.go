@@ -22,6 +22,10 @@ type user struct {
 func AddUser(c *gin.Context) {
 	name := c.PostForm("name")
 	email := c.PostForm("email")
+	rawData, _ := c.GetRawData()
+	reqBody := string(rawData)
+	// requestForm, _ := json.Unmarshal(reqBody, user)
+	fmt.Println(reqBody)
 	token := util.GenerateRandomString(30)
 
 	if err != nil {
@@ -29,6 +33,7 @@ func AddUser(c *gin.Context) {
 		return
 	}
 	var idString (string)
+	var id (int)
 	err = UserDb.Update(func(tx *buntdb.Tx) error {
 		err := tx.CreateIndex("token", "token")
 		if err != nil{
@@ -38,9 +43,8 @@ func AddUser(c *gin.Context) {
 		if err != nil{
 			return err;
 		}
-		id := numUsers + 1
+		id = numUsers + 1
 		idString = strconv.Itoa(id)
-		fmt.Println(idString)
 		mapD := map[string]string{"name": name, "email": email, "token": token, "id": idString}
 		mapB, _ := json.Marshal(mapD)
 		_, _, errr := tx.Set(idString, string(mapB), nil)
@@ -49,7 +53,7 @@ func AddUser(c *gin.Context) {
 	if err != nil{
 		c.JSON(500, gin.H{"error": err.Error()})
 	} else {
-		c.JSON(200, gin.H{"id": idString, "name": name, "email": email, "token": token})
+		c.JSON(200, gin.H{"id": id, "name": name, "email": email, "token": token})
 	}
 }
 
@@ -71,7 +75,7 @@ func GetUser(c *gin.Context) {
 func GetAllUsers(c *gin.Context) {
 	UserDb.View(func(tx *buntdb.Tx) error {
 		numUsers, error := tx.Len()
-		var users []user
+		users := make([]user, 0)
 		if error != nil {
 			c.JSON(500, gin.H{"error": error.Error()})
 			return error
@@ -80,6 +84,7 @@ func GetAllUsers(c *gin.Context) {
 			u, err := tx.Get(strconv.Itoa(i))
 			if err != nil{
 				c.JSON(500, gin.H{"error": err.Error()})
+				return err
 			}
 			users = append(users, ReformatUser(u))
 		}
@@ -87,6 +92,7 @@ func GetAllUsers(c *gin.Context) {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return err
 		}
+
 		c.JSON(200, gin.H{"users": users})
 		return err
 	})

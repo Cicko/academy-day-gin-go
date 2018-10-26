@@ -26,6 +26,7 @@ func main() {
 	Comments := router.Group("api/posts")
 	{
 		Comments.POST("/:postId/comments", routes.AddComment)
+		// Comments.GET("/:postId/comments/:id", routes.GetComment)
 	}
 	router.Run()
 }
