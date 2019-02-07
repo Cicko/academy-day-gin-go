@@ -12,3 +12,8 @@ services:
     ports:
     - "8080:8080"
 ```
+
+
+To run just the tests:
+
+```docker-compose run chakram npm run test:users ```
