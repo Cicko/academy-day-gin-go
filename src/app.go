@@ -18,6 +18,7 @@ func configureGin() {
 		Users.GET("/", routes.GetAllUsers)
 		Users.PUT("/:id", routes.EditUser)
 		Users.DELETE("/:id", routes.DeleteUser)
+		Users.DELETE("/", routes.DeleteAllUsers)
 	}
 	Posts := router.Group("api/posts")
 	{

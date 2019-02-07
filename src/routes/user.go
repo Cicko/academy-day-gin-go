@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/buntdb"
 	"strconv"
-	"time"
 )
 
 var UserDb, _ = buntdb.Open("users.db")
@@ -82,11 +81,9 @@ func GetAllUsers(c *gin.Context) {
 		}
 		for i := 1; i <= numUsers; i++ {
 			u, err := tx.Get(strconv.Itoa(i))
-			if err != nil{
-				c.JSON(500, gin.H{"error": err.Error()})
-				return err
+			if err == nil {
+				users = append(users, ReformatUser(u))
 			}
-			users = append(users, ReformatUser(u))
 		}
 		c.JSON(200, gin.H{"users": users})
 		return err
@@ -130,7 +127,25 @@ func EditUser(c *gin.Context) {
 func DeleteUser(c *gin.Context) {
 	id := c.Params.ByName("id")
 	UserDb.Update(func(tx *buntdb.Tx) error {
-		tx.Set(id, "cucu", &buntdb.SetOptions{Expires:true, TTL:time.Second})
+		// tx.Set(id, "cucu", &buntdb.SetOptions{Expires:true, TTL:time.Second})
+		_, err := tx.Delete(id)
+		if err != nil{
+			c.JSON(500, gin.H{"error": err.Error()})
+			return err
+		}
+		c.JSON(200, nil)
+		return err
+	})
+}
+
+func DeleteAllUsers(c *gin.Context) {
+	UserDb.Update(func(tx *buntdb.Tx) error {
+		error := tx.DeleteAll()
+		if error != nil{
+			c.JSON(500, gin.H{"error": error.Error()})
+			return error
+		}
+		c.JSON(200, nil)
 		return nil
 	})
 }
