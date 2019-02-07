@@ -93,8 +93,14 @@ func GetAllUsers(c *gin.Context) {
 
 func EditUser(c *gin.Context) {
 	id := c.Params.ByName("id")
-	name := c.PostForm("name")
-	email := c.PostForm("email")
+	rawData, _ := c.GetRawData()
+	reqForm := &user{}
+	err := json.Unmarshal([]byte(rawData), reqForm)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+	}
+	name := reqForm.Name
+	email := reqForm.Email
 	UserDb.Update(func(tx *buntdb.Tx) error {
 		u, err := tx.Get(id)
 		if err != nil {
