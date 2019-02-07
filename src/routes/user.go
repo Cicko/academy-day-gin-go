@@ -66,7 +66,7 @@ func GetUser(c *gin.Context) {
 			c.JSON(404, gin.H{"error": "User doesn't exist"})
 			return err
 		}
-		c.JSON(200, gin.H{"user": ReformatUser(user)})
+		c.JSON(200, ReformatUser(user))
 		return err
 	})
 }
@@ -88,11 +88,6 @@ func GetAllUsers(c *gin.Context) {
 			}
 			users = append(users, ReformatUser(u))
 		}
-		if err != nil{
-			c.JSON(500, gin.H{"error": err.Error()})
-			return err
-		}
-
 		c.JSON(200, gin.H{"users": users})
 		return err
 	})

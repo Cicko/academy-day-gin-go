@@ -4,6 +4,13 @@
 version: '3.2'
 
 services:
+  chakram:
+    image: registry.gitlab.com/bmaximilian/wtl-academy-chakram-tests/chakram:latest
+    command: /wait-for-it.sh -t 60 api:8080 -- npm run test
+    environment:
+      - BASE_URL=http://api:8080/api
+    networks:
+      default:
   api:
     build: api
     volumes:
@@ -11,3 +18,5 @@ services:
     command: go run app.go
     ports:
     - "8080:8080"
+    networks:
+      default:
