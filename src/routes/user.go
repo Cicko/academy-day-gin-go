@@ -20,12 +20,12 @@ type user struct {
 }
 
 func AddUser(c *gin.Context) {
-	name := c.PostForm("name")
-	email := c.PostForm("email")
+	// We can not use PostForm because in the Tests the user is created providing RAW data
+	// name := c.PostForm("name")
+	// email := c.PostForm("email")
 	rawData, _ := c.GetRawData()
-	reqBody := string(rawData)
-	// requestForm, _ := json.Unmarshal(reqBody, user)
-	fmt.Println(reqBody)
+	reqForm := &user{}
+	err := json.Unmarshal([]byte(rawData), reqForm)
 	token := util.GenerateRandomString(30)
 
 	if err != nil {
@@ -45,7 +45,7 @@ func AddUser(c *gin.Context) {
 		}
 		id = numUsers + 1
 		idString = strconv.Itoa(id)
-		mapD := map[string]string{"name": name, "email": email, "token": token, "id": idString}
+		mapD := map[string]string{"name": reqForm.Name, "email": reqForm.Email, "token": token, "id": idString}
 		mapB, _ := json.Marshal(mapD)
 		_, _, errr := tx.Set(idString, string(mapB), nil)
 		return errr
@@ -53,7 +53,7 @@ func AddUser(c *gin.Context) {
 	if err != nil{
 		c.JSON(500, gin.H{"error": err.Error()})
 	} else {
-		c.JSON(200, gin.H{"id": id, "name": name, "email": email, "token": token})
+		c.JSON(200, gin.H{"id": id, "name": reqForm.Name, "email": reqForm.Email, "token": token})
 	}
 }
 
