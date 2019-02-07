@@ -1,1 +1,1 @@
-The docker-compose.yml file should be in one folder higher
+The docker-compose.yml file should be in the parent folder.
