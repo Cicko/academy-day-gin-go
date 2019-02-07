@@ -15,7 +15,7 @@ type user struct {
 	Name string `json:"name"`
 	Email string `json:"email"`
 	Token string `json:"token"`
-	Id string `json:"id"`
+	Id int `json:"id"`
 }
 
 func AddUser(c *gin.Context) {
@@ -44,7 +44,7 @@ func AddUser(c *gin.Context) {
 		}
 		id = numUsers + 1
 		idString = strconv.Itoa(id)
-		mapD := map[string]string{"name": reqForm.Name, "email": reqForm.Email, "token": token, "id": idString}
+		mapD := user{reqForm.Name, reqForm.Email, token, id}
 		mapB, _ := json.Marshal(mapD)
 		_, _, errr := tx.Set(idString, string(mapB), nil)
 		return errr
