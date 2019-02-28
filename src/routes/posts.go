@@ -19,23 +19,25 @@ type post struct {
 }
 
 func AddPost(c *gin.Context) {
-	message := c.PostForm("message")
-	token := c.GetHeader("token")
-	var author user
-
-	err := UserDb.View(func(tx *buntdb.Tx) error {
-		author, err = GetUserByToken(token)
-		if err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-		}
-		return nil
-	})
-
-
+	rawData, _ := c.GetRawData()
+	reqForm := &post{}
+	err := json.Unmarshal([]byte(rawData), reqForm)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+	message := reqForm.Message
+
+	token := c.GetHeader("token")
+	var author user
+
+	UserDb.View(func(tx *buntdb.Tx) error {
+		author, error := GetUserByToken(token)
+		if error != nil && &(author) == nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+		}
+		return nil
+	})
 	var idString (string)
 	err = PostsDb.Update(func(tx *buntdb.Tx) error {
 		numPosts, err := tx.Len()
@@ -122,13 +124,13 @@ func DeletePost(c *gin.Context) {
 
 func ShowPosts(c *gin.Context) {
 	PostsDb.View(func(tx *buntdb.Tx) error {
-		numUsers, error := tx.Len()
+		numPosts, error := tx.Len()
 		var posts []post
 		if error != nil {
 			c.JSON(500, gin.H{"error": error.Error()})
 			return error
 		}
-		for i := 1; i <= numUsers; i++ {
+		for i := 1; i <= numPosts; i++ {
 			p, err := tx.Get(strconv.Itoa(i))
 			if err != nil{
 				c.JSON(500, gin.H{"error": err.Error()})
